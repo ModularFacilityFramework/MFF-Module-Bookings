@@ -23,6 +23,15 @@ function PageAccessTab({ coreApi }) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
+  // Role columns sort on whether the page is ticked for that role.
+  const sortColumns = { page: (p) => p.label };
+  roles.forEach(role => {
+    sortColumns[`role:${role}`] = (p) => (access[p.key] || []).includes(role);
+  });
+  const { useSortedRows } = coreApi;
+  const { SortHeader } = coreApi.ui;
+  const table = useSortedRows(pages, sortColumns, { rememberAs: 'bookings.pageAccess.table' });
+
   useEffect(() => {
     api.get('/bookings/page-access')
       .then(res => { setPages(res.data.pages); setRoles(res.data.roles); setAccess(res.data.access); })
@@ -57,9 +66,16 @@ function PageAccessTab({ coreApi }) {
       {!canManageUsers && <p style={hintStyle}>Read-only - only staff-level users in this module can change page access.</p>}
       <div style={wrapperStyle}>
         <table style={tableStyle}>
-          <thead style={theadStyle}><tr><th style={thStyle}>Page</th>{roles.map(role => <th key={role} style={thStyle}>{role}</th>)}</tr></thead>
+          <thead style={theadStyle}>
+            <tr>
+              <SortHeader table={table} column="page" style={thStyle}>Page</SortHeader>
+              {roles.map(role => (
+                <SortHeader key={role} table={table} column={`role:${role}`} label={role} style={thStyle}>{role}</SortHeader>
+              ))}
+            </tr>
+          </thead>
           <tbody>
-            {pages.map(page => (
+            {table.rows.map(page => (
               <tr key={page.key}>
                 <td style={tdStyle}>{page.label}</td>
                 {roles.map(role => (

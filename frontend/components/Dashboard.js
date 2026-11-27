@@ -51,6 +51,11 @@ const contentPanelStyle = {
 
 const loadingStyle = { textAlign: 'center', padding: '20px' };
 
+// For a core too old to provide coreApi.usePageState.
+function useStateFallback(key, defaultValue) {
+  return useState(defaultValue);
+}
+
 function Dashboard({ coreApi }) {
   const { api, useAuth, useRoles } = coreApi;
   const { userData } = useAuth();
@@ -60,7 +65,9 @@ function Dashboard({ coreApi }) {
   // (same as elsewhere in this module), everyone else only sees a tab once
   // one of their roles has been explicitly granted it there.
   const [access, setAccess] = useState(null);
-  const [activeTab, setActiveTab] = useState(null);
+  // A saved tab that is no longer visible falls back to the first one below.
+  const usePageState = coreApi.usePageState || useStateFallback;
+  const [activeTab, setActiveTab] = usePageState('bookings.dashboard.tab', null);
 
   useEffect(() => {
     api.get('/bookings/page-access')
